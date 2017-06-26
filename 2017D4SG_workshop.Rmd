@@ -1,0 +1,191 @@
+---
+title: "弘道老人福利基金會"
+output: 
+  flexdashboard::flex_dashboard:
+    social: menu
+    source_code: embed
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE,
+	warning = FALSE
+  )
+library(flexdashboard)
+library(dplyr)
+library(ggplot2)
+library(chron)
+library(highcharter)
+library(ggmap)
+library(geosphere)
+library(maptools)
+library(ggplot2)
+library(gpclib)
+library(rgdal)
+library(devtools)
+library(mapproj)
+library(leaflet)
+library(maps)
+
+cus <- read.csv("/Users/apple/nicole/R code/competition/personal.csv", fileEncoding = "big5")
+sfn <- readOGR(dsn='/Users/apple/nicole/R code/mission/村里界圖',layer="Village_NLSC_1050715")
+sfn@data$CT_Name <- paste0(sfn@data$C_Name,sfn@data$T_Name)
+tic=sfn[sfn@data$CT_Name %in% c("臺中市西屯區"),]
+sfn.f <- tic %>% fortify(region='V_Name') 
+
+```
+
+關於弘道{data-orientation=rows}
+=====================================   
+
+### 關於AIO 
+
+弘道老人福利基金會致力於老人長期照護服務，提供深耕社區、居家式的服務，包含送餐、社區服務、居家服務、醫療照護連結。近年更在重整服務經驗中，開辦整合照顧模式（AIO, All-in-one），提供個案一日多次、短時間、小區域的客製化服務，包含陪伴型、身體型、健促型、全家型、照顧指導服務、夜間 居服、居家安寧等。
+
+--------
+
+從個案、服務執行人員(照秘)、管理人員(社工)三個層面探討現況
+
+- 個案面：資料收集包含地區(里)、失能程度、年齡、獨居與否、費用負擔情形(自費、半自費、政府補助、時數(補助時數與實際時數)
+- 照秘面：個案(含所有子資料)、負責的個案數、每月工時
+- 社工面：個案(含所有子資料)、照秘(證書、工作排程距離、年齡)
+
+
+### 組織章程
+
+<img src="/Users/apple/nicole/R code/competition/a.png" , width="70%"> 
+
+個案狀況{data-orientation=column}
+=====================================  
+
+ Column {.tabset}
+-------------------------------------
+
+### 各服務員個案數 {data-width=800}
+    
+```{r}
+
+cus$X21.失能程度 <- factor(cus$X21.失能程度, levels = levels(cus$X21.失能程度)[order(levels(cus$X21.失能程度), decreasing = TRUE)])
+
+cus %>% 
+  group_by(X17.服務員) %>% 
+  summarise(t=length(unique(X2.案主姓名)) )->B
+
+cus %>% 
+  group_by(X17.服務員,X21.失能程度) %>% 
+  summarise(amount = length(unique(X2.案主姓名)) )%>%
+  merge(B) %>% 
+  ggplot(aes(x = reorder(X17.服務員, -t), y = amount, fill = X21.失能程度)) +
+  geom_bar(stat = 'identity', position = 'stack')+ 
+  labs(x="服務員",y="個案量")+
+  theme_grey(base_family="STHeiti")+ 
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.5)) 
+
+```
+
+### 各里個案數
+
+```{r}
+cus %>% 
+  group_by(X7.里別) %>% 
+  summarise(t=length(unique(X2.案主姓名)) )->C
+
+cus%>% 
+  group_by(X7.里別,X21.失能程度) %>% 
+  summarise(amount = length(unique(X2.案主姓名)) ) %>% 
+  merge(C) %>% 
+  ggplot(aes(x=reorder(X7.里別,-t), y=amount, fill = X21.失能程度)) +
+  geom_bar(stat = "identity")+ 
+  labs(x="里",y="個案量")+
+  theme_grey(base_family="STHeiti")+ 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+```
+
+### 各社工個案數
+
+```{r}
+cus %>% 
+  group_by(X19.社工) %>% 
+  summarise(t=length(unique(X2.案主姓名)) )-> D
+
+cus %>% 
+  group_by(X19.社工 ,X21.失能程度) %>% 
+  summarise(amount = length(unique(X2.案主姓名)) )%>%
+  merge(D) %>% 
+  ggplot(aes(x = reorder(X19.社工, -t), y = amount, fill = X21.失能程度)) +
+  geom_bar(stat = 'identity', position = 'stack')+ 
+  labs(x="社工",y="個案量")+
+  theme_grey(base_family="STHeiti")+ 
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.5)) 
+
+```
+
+
+Column {.tabset}
+-------------------------------------
+
+### 男女比
+
+```{r}
+cus[unique(cus$編號),] %>% 
+  group_by(X3.性別) %>%
+  summarise(t = n()) %>% 
+  ggplot(aes(x=X3.性別, y=t,fill = X3.性別)) +
+  geom_bar( stat = "identity")+ 
+  theme_grey(base_family="STHeiti")+
+  labs(x="性別",y="個案量")
+```
+
+
+### 失能程度 {data-width=300}
+
+```{r}
+cus[unique(cus$編號),] %>% 
+  group_by(X21.失能程度) %>%
+  summarise(t = n()) %>% 
+  ggplot(aes(x=X21.失能程度, y=t,fill = X21.失能程度)) +
+  geom_bar( stat = "identity")+ 
+  theme_grey(base_family="STHeiti")+
+  labs(x="失能程度",y="個案量")
+
+```   
+
+
+臺中市西屯區個案數{data-orientation=rows}
+=====================================     
+
+### 個案分佈{data-width=850}
+
+```{r echo=FALSE,warning = FALSE}
+
+getColor <- function(quakes) {
+  sapply(cus$X21.失能程度, function(mag) {
+    if(mag == "重度") {
+      "#de2d26"
+    } else if(mag == "中度") {
+      "#fc9272"
+    } else {
+      "#fee0d2"
+    } })
+}
+
+pou <- paste0("個案姓名：", cus$X2.案主姓名,"<br>失能程度：", cus$X21.失能程度)
+leaflet(data = tic) %>% addProviderTiles(providers$CartoDB.Positron) %>%
+  addPolygons(color="gray", weight = 1, smoothFactor = 0.5,   opacity = 0.8) %>% 
+  addCircleMarkers(lng=cus$lng, lat=cus$lat, 
+                   radius = 3,color=getColor(cus),popup=pou) 
+
+```
+
+### 地圖敘述{data-width=150}
+
+- 以紅色的深淺度表示失能程度
+    - 重度
+    - 中度
+    - 輕度/無
+
+<br/>
+
+- 無：表示政府無核定失能，因此無失能程度，為自費申請 AIO 服務，因此將此歸類與失能程度輕者一類
+
