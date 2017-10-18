@@ -27,7 +27,7 @@ library(mapproj)
 library(leaflet)
 library(maps)
 
-cus <- read.csv("/Users/apple/nicole/R code/competition/personal.csv", fileEncoding = "big5")
+cus <- read.csv("/Users/apple/nicole/R code/activity/personal.csv", fileEncoding = "big5")
 sfn <- readOGR(dsn='/Users/apple/nicole/R code/mission/村里界圖',layer="Village_NLSC_1050715")
 sfn@data$CT_Name <- paste0(sfn@data$C_Name,sfn@data$T_Name)
 tic=sfn[sfn@data$CT_Name %in% c("臺中市西屯區"),]
@@ -171,8 +171,9 @@ getColor <- function(quakes) {
 }
 
 pou <- paste0("個案姓名：", cus$X2.案主姓名,"<br>失能程度：", cus$X21.失能程度)
-leaflet(data = tic) %>% addProviderTiles(providers$CartoDB.Positron) %>%
-  addPolygons(color="gray", weight = 1, smoothFactor = 0.5,   opacity = 0.8) %>% 
+leaflet(data = tic) %>% 
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addPolygons(color="gray", weight = 1, smoothFactor = 0.5,   opacity = 0.8) %>%
   addCircleMarkers(lng=cus$lng, lat=cus$lat, 
                    radius = 3,color=getColor(cus),popup=pou) 
 
