@@ -1,0 +1,88 @@
+---
+title: "地址轉經緯度"
+author: "Peng-Wen, Lin"
+date: " Sep, 22, 2017"
+output:
+   html_document:
+     highlight: textmate
+     toc: yes
+     toc_depth: 4
+     toc_float:
+       collapsed: yes
+       number_sections: yes
+       smooth_scroll: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE,
+	warning = FALSE)
+library(readr)
+library(data.table)
+library(dplyr)
+library(ggmap)
+library(DT)
+library(scales)
+library(magrittr)
+library(stringr)
+library(tidyr)
+library(rgdal)
+```
+
+</br>
+
+### 前言
+- 經緯度是畫地圖必備的工具
+- 新的實價登錄資料並未提供經緯度資訊，故必須用地址轉成經緯度
+
+### 方法一
+
+> [轉經緯度的網頁](http://gps.uhooamber.com/address-to-lat-lng.html)
+
+- 人工作業
+- 一次最多 200 筆左右，不然速度會越來越慢，而且會一直跑出`查無經緯度`
+
+> [Google API](http://card.url.com.tw/realads/map_latlng.php)
+
+-------
+
+### 方法二
+
+> R code 轉經緯度
+
+```{r echo=FALSE}
+### 經緯轉換
+trans <- read.csv("/Users/apple/nicole/OpenData/新實價登錄資料/S10/A_lvr_land_A.csv", fileEncoding = "big5")
+knitr::kable(trans[1:3,], align = 'c')
+```
+
+- `ggmap` 套件中的 `geocode` 轉經緯度
+- 查詢你還可以轉多少筆地址
+- 範例資料筆數為`4360`筆
+
+```{r}
+geocodeQueryCheck(userType = "free") #查詢今日剩下額度
+
+trans$土地區段位置或建物區門牌 <- as.character(trans$土地區段位置或建物區門牌)
+geocode(trans$土地區段位置或建物區門牌[1])
+
+loca <- dplyr::select(trans, 1:3) 
+for(i in 1:10){
+  a <- geocode(loca$土地區段位置或建物區門牌[i])
+  loca$lon[i] <- a[[1]]
+  loca$lat[i] <- a[[2]]
+  #print(i)
+}
+knitr::kable(loca[1:10,], align = 'c')
+```
+
+---------
+
+### 方法三
+
+> [地理圖資地址定位服務](https://www.tgos.tw/tgos/Web/Address/TGOS_Address.aspx)
+
+- 我沒用過！
+- 應該會是最有效率的方法
+
+

@@ -1,0 +1,179 @@
+---
+title: "互動式繪圖"
+author: "Peng-Wen, Lin"
+date: "Oct, 17, 2017"
+output:
+   html_document:
+     highlight: textmate
+     theme: journal
+     toc: yes
+     toc_depth: 3
+     toc_float:
+       code_folding: hide
+       collapsed: yes
+       number_sections: yes
+       smooth_scroll: no
+     code_folding : hide 
+---
+
+<br/>
+<br/>
+
+----------------------------------------------------------------
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE,
+	warning = FALSE
+  )
+library(geosphere)
+library(dplyr)
+library(data.table)
+library(maptools)
+library(ggmap)
+library(rgdal)
+library(ggplot2)
+library(leaflet)
+library(plotly)
+cus <- read.csv("/Users/apple/nicole/R code/activity/personal.csv", fileEncoding = "big5")
+sfn <- readOGR(dsn='/Users/apple/nicole/R code/mission/村里界圖',layer="Village_NLSC_1050715")
+sfn@data$CT_Name <- paste0(sfn@data$C_Name,sfn@data$T_Name)
+tic=sfn[sfn@data$CT_Name %in% c("臺中市西屯區"),]
+tic@data$number <- rnorm(length(tic@polygons), mean =50, sd=20)
+```
+
+
+##### 介紹除了 ggplot 外的繪圖套件，當想要呈現出來的資訊是可以讓使用者互動點選使用的套件可以用什麼；以及介紹其他繪圖工具。
+
+- R 套件
+    + highcharter
+    + leaflet
+    + plotly
+- 非 R
+    + [CARTO](https://carto.com/)
+    + [plotdb](https://plotdb.com/)
+- 色彩
+    + [colorbrewer2](http://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3)
+    + [colorsupplyyy](http://colorsupplyyy.com/app/)
+
+## **leaflet**
+- 主要是用來畫互動式地圖的套件
+- 比較友善的是標所在地
+- 比較麻煩的是填顏色，但相對可調控度高
+    + colorNumeric()
+    + colorQuantile()
+
+### 語法架構
+
+> leaflet(data = shp) %>% 
+    addTiles() %>%  
+    addMarkers(lng=, lat=, popup="顯現的文字") %>% 
+    addPolygons(fillColor = ) %>% 
+    addProviderTiles() %>% 
+    addLegend()
+
+
+-----
+
+```{r}
+cor <- colorNumeric(
+  palette = c("green","red"),
+  domain = tic@data$number)
+
+leaflet(data = tic) %>% 
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addPolygons(color = "#444444",weight = 1, smoothFactor = 0.5, 
+              opacity = 1, fillColor = ~cor(number)) %>% 
+  addLegend("bottomright", pal = cor, values = ~ number,
+    title = " Random",
+    labFormat = labelFormat(prefix = "$"),
+    opacity = 0.8)
+
+#######
+cus$lng <- cus$lng + runif(dim(cus)[1], -0.008,0.008)
+getColor <- function(quakes) {
+  sapply(cus$X21.失能程度, function(mag) {
+    if(mag == "重度") {
+      "#de2d26"
+    } else if(mag == "中度") {
+      "#fc9272"
+    } else {
+      "#fee0d2"
+    } })
+}
+
+pou <- paste0("編號：", cus$編號,"<br>失能程度：", cus$X21.失能程度)
+leaflet(data = tic) %>% 
+  setView(lng = mean(tic@bbox[1,]), lat = mean(tic@bbox[2,]), zoom = 12) %>% 
+  addPolygons(color="gray", weight = 1.5, smoothFactor = 0.5,   opacity = 0.8) %>% 
+  addCircleMarkers(lng=cus$lng, lat=cus$lat, 
+                   radius = 3,color=getColor(cus),popup=pou) %>% 
+   addTiles()
+```
+
+-----
+
+<br>
+
+## **plotly**
+- 互動式圖表的套件
+- 一般的敘述性統計圖表
+- 地圖式呈現圖表
+
+### 語法架構
+
+>data %>% ploy_ly(
+   x = ~x,
+    y = ~y,
+    frame = ~f,
+    size = ~s,
+    text = ~t,
+    color = ~c,
+    type = "scatter" "bar" "histogram" "heatmap" "box",
+    mode = "markers" "line" )
+  
+> data %>% ploy_ly() %>% 
+    add_histogram()
+    add_box_plot()
+    
+
+-----
+
+##### 用 R 內 `diamonds` dataset 做demo
+```{r echo=FALSE}
+data(diamonds)
+head(diamonds)
+```
+
+```{r}
+plot_ly(diamonds, x = ~cut, type = "histogram") 
+
+plot_ly(diamonds, x = ~price, y = ~interaction(clarity, cut)) %>%
+  add_boxplot(color = ~clarity) %>%
+  layout(yaxis = list(title = ""), margin = list(l = 100))
+
+diamonds %>%  plot_ly (
+  x = ~carat ,
+  y = ~price ,
+  color = ~color,
+  type = 'scatter',
+  mode = 'markers')
+
+diamonds %>%  plot_ly(
+    x = ~carat ,
+    y = ~price ,
+    frame = ~cut,
+    type = 'scatter',
+    mode = 'markers'
+  )
+```
+
+
+
+## Reference
+- [Leaflet for R](https://rstudio.github.io/leaflet/markers.html)
+- [Plotly 官網](https://plot.ly/)
+- [Plotly for R](https://plotly-book.cpsievert.me/index.html)
+- [plotly.R Library](https://plot.ly/r/#fundamentals)
+- [plotly cheat sheet](https://images.plot.ly/plotly-documentation/images/r_cheat_sheet.pdf)
+
