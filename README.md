@@ -14,9 +14,9 @@ A place for competition result or some intresting things
     - [How to write Rmarkdown](https://pongponglin.github.io/Playground/rmarkdown_introduction.html)
 - prime : 會告訴你誰是質數的迴圈
 - introduction packages
-    - rvest.R
-    - lattice.R 
-    - rvest_lattice.Rmd
+    - [rvest_lattice](https://pongponglin.github.io/Playground/rvest_lattice.html)
+        - rvest.R
+        - lattice.R 
 - 地址轉經緯度教學
      - [地址轉經緯度教學.html](https://pongponglin.github.io/Playground/trans_latlog.html) 
 - 互動式繪圖教學
